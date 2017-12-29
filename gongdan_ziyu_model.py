@@ -162,6 +162,86 @@ class ZiyuClassifier(object):
         plt=plot_learning_curve(self.model, name, X, y, ylim=None,cv=cv)
         return plt
 
+class DataChecker(object):
+
+    std_data_values = {'问题触发时间':[],
+                       '地市':['杭州','湖州'],
+                       '区县':[],
+                       '网络类型':[],
+                       '网元要素':[],
+                       '数据来源':[],
+                       '问题归类(一级)':[],
+                       '问题归类(二级)':[],
+                       '问题现象':[],
+                       '问题类型':[],
+                       '类别要素':[],
+                       '是否追加':[],
+                       '主指标(事件)':[],
+                       '处理优先级':[],
+                       '目前状态':[],
+                       '资管生命周期状态':[],
+                       '劣化次数':[],
+                       '告警触发次数':[],
+                       '日均流量(GB)':[],
+                       '业务要素':[],
+                       '触发要素':[],
+                       '场景要素':[],
+                       '覆盖类型':[],
+                       '覆盖场景':[],
+                       '二级场景':[],
+                       '时间维度':[],
+                       '中心经度':[],
+                       '中心维度':[],
+                       '工单类型':[],
+                       'TAC(LAC)':[]}
+
+    def __init__(self):
+        self.item_num = 0
+        self.feature_num = 0
+        self.missing_keys = []
+        self.data_exception_keys = []
+
+    def __null_process(self, data, fill_data):
+        pass
+
+    def data_check(self, data = pd.DataFrame(), nan_fill_data = pd.DataFrame()):
+        self.item_num,self.feature_num = data.shape
+        if self.item_num == 0 or self.feature_num == 0:
+            # print("The file has no data!")
+            return 1
+        else:
+            for key in ZiyuClassifier.keys_num + ZiyuClassifier.keys_class:
+                try:
+                    data.loc[:,key]
+                except:
+                    self.missing_keys.append(key)
+                else:
+                    pass
+            if len(self.missing_keys) != 0:
+                # print(self.missing_keys)
+                return 2
+            else:
+                data_ava = data.loc[:,ZiyuClassifier.keys_num + ZiyuClassifier.keys_class]
+                self.__null_process(data_ava, nan_fill_data)
+                # 数值是否在合理范围
+                for key in ZiyuClassifier.keys_num:
+                    if True in list(data.loc[:,key] < DataChecker.std_data_values[key][0])\
+                            or True in list(data.loc[:,key] > DataChecker.std_data_values[key][1]):
+                        self.data_exception_keys.append(key)
+                    else:
+                        pass
+                # 标称字段是否集合元素
+                for key in ZiyuClassifier.keys_class:
+                    if False in data.loc[:,key].map(lambda x: x in DataChecker.std_data_values[key]):
+                        self.data_exception_keys.append(key)
+                    else:
+                        pass
+                if len(self.data_exception_keys) != 0:
+                    # print(self.data_exception_keys)
+                    return 3
+                else:
+                    return 0
+
 if __name__ == "__main__":
     data_all = pd.read_csv('E:/智能运维/工单查询问题/78910月原始问题库数据_不考虑无单_all_utf8.csv', sep=',', encoding='utf8')
     test = data_all[data_all['问题触发时间'] == '9月']
@@ -170,9 +250,7 @@ if __name__ == "__main__":
     train = train_all  # pd.concat([train_all[train_all.自愈状态=='派单'].sample(frac=0.5,axis=0,random_state=0),train_all[train_all.自愈状态=='自愈']],axis=0,join='outer')
     print("训练样本比例为%f" % (train[train['自愈状态'] == '派单'].shape[0] / train[train['自愈状态'] == '自愈'].shape[0]))
     print("测试样本比例为%f" % (test[test['自愈状态'] == '派单'].shape[0] / test[test['自愈状态'] == '自愈'].shape[0]))
-    """
-    新数据来时，缺省值、异常值判断，新数据数据格式建议为dict或DataFrame，包含字段名
-    """
+    # 创建模型
     model=ZiyuClassifier(RandomForestClassifier(n_estimators=120,min_samples_leaf=1,max_depth=12,max_features=0.4,random_state=0))
     trainX_prepro,train_y_prepro=model.data_fit_transform(train.iloc[:,:-1],train.loc[:,'自愈状态'])
     model.fit(trainX_prepro,train_y_prepro)
@@ -180,10 +258,31 @@ if __name__ == "__main__":
     joblib.dump(model,'./gongdan_ziyu.model')
     # 加载模型，预处理，预测
     mdl=joblib.load('./gongdan_ziyu.model')
-    testX_prepro = mdl.data_transform(test.iloc[:, :-1])
-    predict_test=mdl.predict(testX_prepro)
-    # mdl.plot_learning_curve(name='RF learning_curve',X=trainX_prepro,y=train_y_prepro,cv=5)
-    # print(mdl.model)
-    print(metrics.confusion_matrix(ZiyuClassifier.encoder4.transform(test.iloc[:,-1]), predict_test))
-    print(metrics.classification_report(ZiyuClassifier.encoder4.transform(test.iloc[:,-1]), predict_test))
-    pass
+    # 读取数据
+    """
+    新数据来时，缺省值、异常值判断，新数据数据格式建议为dict或DataFrame，包含字段名
+    """
+    # 添加简单校验规则
+    nan_filler = pd.DataFrame()
+    data_checker = DataChecker()
+    data_status = data_checker.data_check(test,nan_filler)
+    if data_status != 0:
+        if data_status == 1:
+            print("The file has no data!")
+            pass
+        elif data_status == 2:
+            print(data_checker.missing_keys)
+            pass
+        else:
+            print(data_checker.data_exception_keys)
+            pass
+    else:
+        # 数据转换
+        testX_prepro = mdl.data_transform(test.iloc[:, :-1])
+        # 预测
+        predict_test=mdl.predict(testX_prepro)
+        # mdl.plot_learning_curve(name='RF learning_curve',X=trainX_prepro,y=train_y_prepro,cv=5)
+        # print(mdl.model)
+        print(metrics.confusion_matrix(ZiyuClassifier.encoder4.transform(test.iloc[:,-1]), predict_test))
+        print(metrics.classification_report(ZiyuClassifier.encoder4.transform(test.iloc[:,-1]), predict_test))
+        pass
