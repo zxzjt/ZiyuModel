@@ -163,7 +163,20 @@ class ZiyuClassifier(object):
         return plt
 
 class DataChecker(object):
+    """数据校验
 
+    参数
+    无
+
+    属性
+    类变量：
+    std_data_values指标取值范围，或枚举
+    实例变量：
+    item_num数据记录数
+    feature_num数据字段数
+    missing_keys缺失关键字段
+    data_exception_keys数据异常的字段
+    """
     std_data_values = {'问题触发时间':[],
                        '地市':['杭州','湖州'],
                        '区县':[],
@@ -202,9 +215,21 @@ class DataChecker(object):
         self.data_exception_keys = []
 
     def __null_process(self, data, fill_data):
+        """数据空值填充
+        根据提供的fill_data填充空值数据
+        :param data:待校验的数据
+        :param fill_data:各字段默认的填充值
+        :return:None
+        """
         pass
 
     def data_check(self, data = pd.DataFrame(), nan_fill_data = pd.DataFrame()):
+        """数据校验
+        根据预设的范围判断数据是否异常，先对数据空值填充，再校验
+        :param data:待校验的数据
+        :param nan_fill_data:各字段默认的填充值
+        :return:数据状态
+        """
         self.item_num,self.feature_num = data.shape
         if self.item_num == 0 or self.feature_num == 0:
             # print("The file has no data!")
