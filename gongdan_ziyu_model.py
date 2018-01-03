@@ -67,7 +67,7 @@ class ZiyuClassifier(object):
     实例变量：model
     """
     # 使用的指标字段
-    keys_class = ['场景要素', '厂家名称', '覆盖类型', '问题现象', '地市', '区县', '数据来源', '业务要素']  # '覆盖场景'
+    keys_class = ['场景要素', '覆盖类型', '问题现象', '地市', '区县', '数据来源', '业务要素']  # '覆盖场景'
     keys_num = ['劣化次数', '告警触发次数', '中心经度', '中心维度', '日均流量(GB)']
     # 数值归一化
     encoder1 = MinMaxScaler()
@@ -136,7 +136,7 @@ class ZiyuClassifier(object):
         :param X: 输入X
         :return: 预测的结果
         """
-        return self.model.predict(X)
+        return np.hstack((self.model.predict(X).reshape((-1,1)),np.max(self.model.predict_proba(X),axis=1).reshape((-1,1))))
 
     def para_opt(self, X, y, param_grid, cv=5, scoring='roc_auc'):
         """网格搜索模型参数优化器
@@ -202,35 +202,58 @@ class DataChecker(object):
     data_exception_keys数据异常的字段
     """
     std_data_values = {'问题触发时间':[],
-                       '地市':['杭州','湖州'],
-                       '区县':[],
-                       '网络类型':[],
-                       '网元要素':[],
-                       '数据来源':[],
+                       '地市':['杭州','宁波','温州','绍兴','嘉兴','湖州','丽水','金华','衢州','台州','舟山'],
+                       '区县':['上城','下城','江干','拱墅','西湖','滨江','下沙','萧山','余杭','建德','富阳','临安','桐庐','淳安',
+                             '海曙','江北','北仑','镇海','鄞州','奉化','余姚','慈溪','象山','宁海',
+                             '鹿城','龙湾','瓯海','洞头','瑞安','乐清','永嘉','平阳','苍南','文成','泰顺',
+                             '越城','绍兴','上虞','诸暨','嵊州','新昌',
+                             '吴兴','南浔','德清','长兴','安吉',
+                             '南湖','秀洲','海宁','平湖','桐乡','嘉善','海盐',
+                             '婺城','金东','兰溪','东阳','永康','义乌','武义','浦江','磐安',
+                             '柯城','衢江','江山','常山','开化','龙游',
+                             '椒江','黄岩','路桥','临海','温岭','玉环','三门','天台','仙居',
+                             '莲都','龙泉','青田','缙云','遂昌','松阳','云和','庆元','景宁','开发区',
+                             '定海','普陀','岱山','嵊泗'],
+                       '网络类型':['4G','2G'],
+                       '网元要素':['基站','路段','小区','栅格'],
+                       '数据来源':['SEQ','北向性能','LTE-MR','实时性能告警'],
                        '问题归类(一级)':[],
                        '问题归类(二级)':[],
-                       '问题现象':[],
+                       '问题现象':['无线切换质差', 'VOLTE接通质差', 'SRVCC切换质差', 'VOLTE丢包质差', 'VOLTE掉话质差',
+                                 '语音质差', '无线接通质差', '实时性能持续质差', 'CSFB回落质差', '无线掉线质差', 'RRC重建比质差',
+                                 'CSFB性能质差','低速率','掉线质差','高负荷','高干扰','零流量'],
                        '问题类型':[],
-                       '类别要素':[],
-                       '是否追加':[],
+                       '类别要素':['互操作','感知','质量','负荷','结构'],
+                       '是否追加':['是','否'],
                        '主指标(事件)':[],
-                       '处理优先级':[],
-                       '目前状态':[],
-                       '资管生命周期状态':[],
-                       '劣化次数':[],
-                       '告警触发次数':[],
-                       '日均流量(GB)':[],
-                       '业务要素':[],
-                       '触发要素':[],
-                       '场景要素':[],
-                       '覆盖类型':[],
-                       '覆盖场景':[],
+                       '主指标表征值':[-110,700],
+                       '处理优先级':['中','高'],
+                       '目前状态':['待接入','归档','人工关闭','已接入'],
+                       '是否为FDD站点':['是','否'],
+                       '是否实时工单已派单':['是','否'],
+                       '是否指纹库智能分析系统运算':['是','否'],
+                       '是否列为白名单':['是','否'],
+                       '是否为性能交维站点':['是','否'],
+                       '是否质检通过':['是','否','未质检'],
+                       '资管生命周期状态':['工程','现网','维护','设计','在网'],
+                       '劣化次数':[1,31],
+                       '告警触发次数':[1,300],
+                       '日均流量(GB)':[0.0,0.27],
+                       '业务要素':['数据','语音'],
+                       '触发要素':['劣于门限','异常事件','人工创造'],
+                       '场景要素':['高速', '海域', '室外', '普铁', '室分', '地铁', '山区', '小微站', '高校', '高铁', '全网'],
+                       '覆盖类型':['室内','室外'],
+                       '覆盖场景':['工业园区', '写字楼', '别墅群', '低层居民区', '高铁', '医院', '高速公路', '村庄',
+                                 '长途汽车站', '高层居民区', '机场', '其他', '星级酒店', '航道', '党政军机关', '广场公园',
+                                 '乡镇', '商业中心', '火车站', '体育场馆', '山农牧林', '近水近海域', '高校', '国道省道',
+                                 '地铁', '郊区道路', '风景区', '公墓', '普铁', '中小学', '集贸市场', '码头', '城区道路',
+                                 '边境小区', '企事业单位', '城中村', '会展中心', '休闲娱乐场所'],
                        '二级场景':[],
-                       '时间维度':[],
-                       '中心经度':[],
-                       '中心维度':[],
-                       '工单类型':[],
-                       'TAC(LAC)':[]}
+                       '时间维度':['天'],
+                       '中心经度':[118.037,123.143],
+                       '中心维度':[27.231,31.176],
+                       '工单类型':['集中质量分析工单'],
+                       'TAC(LAC)':[22148,26840]}
 
     def __init__(self):
         self.item_num = 0
@@ -286,7 +309,7 @@ class DataChecker(object):
                         pass
                 # 标称字段是否集合元素
                 for key in ZiyuClassifier.keys_class:
-                    if False in data_ava.loc[:,key].map(lambda x: x in DataChecker.std_data_values[key]):
+                    if False in data_ava.loc[:,key].map(lambda x: x in DataChecker.std_data_values[key]).tolist():
                         self.data_exception_keys.append(key)
                     else:
                         pass
@@ -310,7 +333,7 @@ class ZiyuLogging(object):
         # 指定logger输出格式
         formatter = logging.Formatter('%(asctime)s %(levelname)s %(filename)s:%(lineno)s - %(message)s')
         # 文件日志
-        file_handler = logging.FileHandler("ziyu_mode.log")
+        file_handler = logging.FileHandler("ziyu_mode.log",encoding='utf8')
         file_handler.setFormatter(formatter)  # 可以通过setFormatter指定输出格式
         # 控制台日志
         console_handler = logging.StreamHandler(sys.stdout)
@@ -346,7 +369,6 @@ if __name__ == "__main__":
     # 日志开启
     ZiyuLogging.config(logger = logging.getLogger("ZiyuLogging"))
     logger = logging.getLogger("ZiyuLogging")
-    # logger.info("test logging")
     # 持久化
     joblib.dump(model,'./gongdan_ziyu.model')
     # 加载模型，预处理，预测
@@ -364,9 +386,11 @@ if __name__ == "__main__":
             logger.info("The file has no data!")
             pass
         elif data_status == 2:
+            logger.info('missing_keys')
             logger.info(data_checker.missing_keys)
             pass
         else:
+            logger.info('exception_keys')
             logger.info(data_checker.data_exception_keys)
             pass
     else:
@@ -376,6 +400,6 @@ if __name__ == "__main__":
         predict_test=mdl.predict(testX_prepro)
         # mdl.plot_learning_curve(name='RF learning_curve',X=trainX_prepro,y=train_y_prepro,cv=5)
         # print(mdl.model)
-        print(metrics.confusion_matrix(ZiyuClassifier.encoder4.transform(test.iloc[:,-1]), predict_test))
-        print(metrics.classification_report(ZiyuClassifier.encoder4.transform(test.iloc[:,-1]), predict_test))
+        print(metrics.confusion_matrix(ZiyuClassifier.encoder4.transform(test.iloc[:,-1]), predict_test[:,0]))
+        print(metrics.classification_report(ZiyuClassifier.encoder4.transform(test.iloc[:,-1]), predict_test[:,0]))
         pass
