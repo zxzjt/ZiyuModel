@@ -245,7 +245,11 @@ class DataChecker(object):
         :param fill_data:各字段默认的填充值
         :return:None
         """
-        pass
+        if data.isnull().any().any() == True:
+            nan_fill_data_dict = nan_fill_data.to_dict(orient='record')[0]
+            data.fillna(nan_fill_data_dict, inplace=True)
+        else:
+            pass
 
     def data_check(self, data = pd.DataFrame(), nan_fill_data = pd.DataFrame()):
         """数据校验
@@ -275,14 +279,14 @@ class DataChecker(object):
                 self.__null_process(data_ava, nan_fill_data)
                 # 数值是否在合理范围
                 for key in ZiyuClassifier.keys_num:
-                    if True in list(data.loc[:,key] < DataChecker.std_data_values[key][0])\
-                            or True in list(data.loc[:,key] > DataChecker.std_data_values[key][1]):
+                    if True in list(data_ava.loc[:,key] < DataChecker.std_data_values[key][0])\
+                            or True in list(data_ava.loc[:,key] > DataChecker.std_data_values[key][1]):
                         self.data_exception_keys.append(key)
                     else:
                         pass
                 # 标称字段是否集合元素
                 for key in ZiyuClassifier.keys_class:
-                    if False in data.loc[:,key].map(lambda x: x in DataChecker.std_data_values[key]):
+                    if False in data_ava.loc[:,key].map(lambda x: x in DataChecker.std_data_values[key]):
                         self.data_exception_keys.append(key)
                     else:
                         pass
