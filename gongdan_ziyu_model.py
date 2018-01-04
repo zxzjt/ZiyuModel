@@ -255,7 +255,7 @@ class DataChecker(object):
                        '二级场景':[],
                        '时间维度':['天'],
                        '中心经度':[118.037,123.143],
-                       '中心维度':[27.231,31.176],
+                       '中心维度':[27.22,31.18],
                        '工单类型':['集中质量分析工单'],
                        'TAC(LAC)':[22148,26840]}
 
@@ -411,25 +411,31 @@ if __name__ == "__main__":
     ZiyuLogging.config(logger=logging.getLogger("ZiyuLogging"))
     logger = logging.getLogger("ZiyuLogging")
     ### 目录轮询，查找处理文件
-    data_dir = './'
-    backup_dir = './backup/'
-    res_dir = './res/'
+    data_dir = 'E:/智能运维/工单查询问题/test_dir/'
+    backup_dir = data_dir + 'backup/'
+    res_dir = data_dir + 'res/'
     if not os.path.isdir(data_dir):
         logger.info("can not find csv dir!")
     else:
-        while False:
+        while True:
             files_list = os.listdir(data_dir)
             if len(files_list) == 0:
-                logger.info("no files or dirs in the dir!")
+                # logger.info("no files or dirs in the dir!")
+                pass
             else:
                 files = [x for x in files_list if os.path.isfile(data_dir+x) and x.endswith(".csv")]
-                for file in files:
-                    ### 读取数据
-                    ### 新数据来时，缺省值、异常值判断，新数据数据格式建议为dict或DataFrame，包含字段名
-                    new_data = pd.read_csv(data_dir+file, sep=',', encoding='utf8')
-                    ### 自愈判断处理
-                    data_with_predict = ziyu_process(new_data)
-                    ### 写入文件
-                    data_with_predict.to_csv(path_or_buf=res_dir+file+'.res.csv', sep=',', encoding='gbk')
-                    os.rename(data_dir+file, backup_dir+file)
-                pass
+                if len(files) == 0:
+                    pass
+                else:
+                    for file in files:
+                        ### 读取数据
+                        ### 新数据来时，缺省值、异常值判断，新数据数据格式建议为dict或DataFrame，包含字段名
+                        new_data = pd.read_csv(data_dir+file, sep=',', encoding='utf8')
+                        ### 自愈判断处理
+                        data_with_predict = ziyu_process(new_data)
+                        ### 写入文件
+                        data_with_predict.to_csv(path_or_buf=res_dir+os.path.splitext(file)[0]+'.res.csv', sep=',', encoding='gbk')
+                        if os.path.exists(backup_dir+file):
+                            os.remove(backup_dir+file)
+                        os.rename(data_dir+file, backup_dir+file)
+                    pass
