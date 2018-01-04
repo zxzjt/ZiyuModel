@@ -134,9 +134,12 @@ class ZiyuClassifier(object):
         """模型预测
         利用拟合的模型预测
         :param X: 输入X
-        :return: 预测的结果
+        :return: DataFrame,预测的结果
         """
-        return np.hstack((self.model.predict(X).reshape((-1,1)),np.max(self.model.predict_proba(X),axis=1).reshape((-1,1))))
+        predict_res = pd.DataFrame()
+        predict_res['自愈判断'] = self.model.predict(X)
+        predict_res['自愈概率'] = np.max(self.model.predict_proba(X), axis=1)
+        return predict_res
 
     def para_opt(self, X, y, param_grid, cv=5, scoring='roc_auc'):
         """网格搜索模型参数优化器
@@ -153,7 +156,6 @@ class ZiyuClassifier(object):
                                cv=cv,
                                scoring=scoring)
         opt_model.fit(X, y)
-        print(opt_model.best_params_)
         return opt_model.best_estimator_
 
     def plot_learning_curve(self, name, X, y, cv=5):
@@ -356,9 +358,9 @@ class ZiyuLogging(object):
 
 if __name__ == "__main__":
     data_all = pd.read_csv('E:/智能运维/工单查询问题/78910月原始问题库数据_不考虑无单_all_utf8.csv', sep=',', encoding='utf8')
-    test = data_all[data_all['问题触发时间'] == '9月']
+    test = data_all[data_all['问题触发时间'] == '9月'].reset_index(drop=True)
     # 抽样
-    train_all = data_all[data_all['问题触发时间'] != '9月']
+    train_all = data_all[data_all['问题触发时间'] != '9月'].reset_index(drop=True)
     train = train_all  # pd.concat([train_all[train_all.自愈状态=='派单'].sample(frac=0.5,axis=0,random_state=0),train_all[train_all.自愈状态=='自愈']],axis=0,join='outer')
     print("训练样本比例为%f" % (train[train['自愈状态'] == '派单'].shape[0] / train[train['自愈状态'] == '自愈'].shape[0]))
     print("测试样本比例为%f" % (test[test['自愈状态'] == '派单'].shape[0] / test[test['自愈状态'] == '自愈'].shape[0]))
@@ -400,6 +402,9 @@ if __name__ == "__main__":
         predict_test=mdl.predict(testX_prepro)
         # mdl.plot_learning_curve(name='RF learning_curve',X=trainX_prepro,y=train_y_prepro,cv=5)
         # print(mdl.model)
-        print(metrics.confusion_matrix(ZiyuClassifier.encoder4.transform(test.iloc[:,-1]), predict_test[:,0]))
-        print(metrics.classification_report(ZiyuClassifier.encoder4.transform(test.iloc[:,-1]), predict_test[:,0]))
+        # print(metrics.confusion_matrix(ZiyuClassifier.encoder4.transform(test.iloc[:,-1]), predict_test['自愈状态']))
+        # print(metrics.classification_report(ZiyuClassifier.encoder4.transform(test.iloc[:,-1]), predict_test['自愈状态']))
+        predict_test['自愈判断'] = ZiyuClassifier.encoder4.inverse_transform(predict_test['自愈判断'])
+        # 写入csv文件
+        pd.concat((test,predict_test),axis=1,join='outer').to_csv(path_or_buf='predict_res.csv',sep=',',encoding='gbk')
         pass
