@@ -1,5 +1,7 @@
+#! /use/bin/python
 # coding: utf8
 import sys
+import os
 import logging
 
 import pandas as pd
@@ -356,33 +358,13 @@ class ZiyuLogging(object):
         logger = logging.getLogger("OtherLogging")
         logger.error("Test OtherLogging")
 
-if __name__ == "__main__":
-    data_all = pd.read_csv('E:/智能运维/工单查询问题/78910月原始问题库数据_不考虑无单_all_utf8.csv', sep=',', encoding='utf8')
-    test = data_all[data_all['问题触发时间'] == '9月'].reset_index(drop=True)
-    # 抽样
-    train_all = data_all[data_all['问题触发时间'] != '9月'].reset_index(drop=True)
-    train = train_all  # pd.concat([train_all[train_all.自愈状态=='派单'].sample(frac=0.5,axis=0,random_state=0),train_all[train_all.自愈状态=='自愈']],axis=0,join='outer')
-    print("训练样本比例为%f" % (train[train['自愈状态'] == '派单'].shape[0] / train[train['自愈状态'] == '自愈'].shape[0]))
-    print("测试样本比例为%f" % (test[test['自愈状态'] == '派单'].shape[0] / test[test['自愈状态'] == '自愈'].shape[0]))
-    # 创建模型
-    model=ZiyuClassifier(RandomForestClassifier(n_estimators=120,min_samples_leaf=1,max_depth=12,max_features=0.4,random_state=0))
-    trainX_prepro,train_y_prepro=model.data_fit_transform(train.iloc[:,:-1],train.loc[:,'自愈状态'])
-    model.fit(trainX_prepro,train_y_prepro)
-    # 日志开启
-    ZiyuLogging.config(logger = logging.getLogger("ZiyuLogging"))
-    logger = logging.getLogger("ZiyuLogging")
-    # 持久化
-    joblib.dump(model,'./gongdan_ziyu.model')
+def ziyu_process(data):
     # 加载模型，预处理，预测
-    mdl=joblib.load('./gongdan_ziyu.model')
-    # 读取数据
-    """
-    新数据来时，缺省值、异常值判断，新数据数据格式建议为dict或DataFrame，包含字段名
-    """
+    mdl = joblib.load('./gongdan_ziyu.model')
     # 添加简单校验规则
     nan_fill_data = mdl.mean_mode
     data_checker = DataChecker()
-    data_status = data_checker.data_check(test,nan_fill_data)
+    data_status = data_checker.data_check(data, nan_fill_data)
     if data_status != 0:
         if data_status == 1:
             logger.info("The file has no data!")
@@ -397,14 +379,57 @@ if __name__ == "__main__":
             pass
     else:
         # 数据转换
-        testX_prepro = mdl.data_transform(test.iloc[:, :-1])
+        testX_prepro = mdl.data_transform(data.iloc[:, :-1])
         # 预测
-        predict_test=mdl.predict(testX_prepro)
+        predict_test = mdl.predict(testX_prepro)
         # mdl.plot_learning_curve(name='RF learning_curve',X=trainX_prepro,y=train_y_prepro,cv=5)
         # print(mdl.model)
-        # print(metrics.confusion_matrix(ZiyuClassifier.encoder4.transform(test.iloc[:,-1]), predict_test['自愈状态']))
-        # print(metrics.classification_report(ZiyuClassifier.encoder4.transform(test.iloc[:,-1]), predict_test['自愈状态']))
+        # print(metrics.confusion_matrix(ZiyuClassifier.encoder4.transform(data.iloc[:,-1]), predict_test['自愈判断']))
+        # print(metrics.classification_report(ZiyuClassifier.encoder4.transform(data.iloc[:,-1]), predict_test['自愈判断']))
         predict_test['自愈判断'] = ZiyuClassifier.encoder4.inverse_transform(predict_test['自愈判断'])
-        # 写入csv文件
-        pd.concat((test,predict_test),axis=1,join='outer').to_csv(path_or_buf='predict_res.csv',sep=',',encoding='gbk')
-        pass
+        # 合并数据，添加字段
+        data_with_predict = pd.concat((data, predict_test), axis=1, join='outer')
+        return data_with_predict
+
+if __name__ == "__main__":
+    data_all = pd.read_csv('E:/智能运维/工单查询问题/78910月原始问题库数据_不考虑无单_all_utf8.csv', sep=',', encoding='utf8')
+    test = data_all[data_all['问题触发时间'] == '9月'].reset_index(drop=True)
+    # 抽样
+    train_all = data_all[data_all['问题触发时间'] != '9月'].reset_index(drop=True)
+    train = train_all  # pd.concat([train_all[train_all.自愈状态=='派单'].sample(frac=0.5,axis=0,random_state=0),train_all[train_all.自愈状态=='自愈']],axis=0,join='outer')
+    print("训练样本比例为%f" % (train[train['自愈状态'] == '派单'].shape[0] / train[train['自愈状态'] == '自愈'].shape[0]))
+    print("测试样本比例为%f" % (test[test['自愈状态'] == '派单'].shape[0] / test[test['自愈状态'] == '自愈'].shape[0]))
+    # 创建模型
+    model=ZiyuClassifier(RandomForestClassifier(n_estimators=120,min_samples_leaf=1,max_depth=12,max_features=0.4,random_state=0))
+    trainX_prepro,train_y_prepro=model.data_fit_transform(train.iloc[:,:-1],train.loc[:,'自愈状态'])
+    model.fit(trainX_prepro,train_y_prepro)
+    # 持久化
+    joblib.dump(model, './gongdan_ziyu.model')
+
+    # 部署时程序入口
+    ### 日志开启
+    ZiyuLogging.config(logger=logging.getLogger("ZiyuLogging"))
+    logger = logging.getLogger("ZiyuLogging")
+    ### 目录轮询，查找处理文件
+    data_dir = './'
+    backup_dir = './backup/'
+    res_dir = './res/'
+    if not os.path.isdir(data_dir):
+        logger.info("can not find csv dir!")
+    else:
+        while False:
+            files_list = os.listdir(data_dir)
+            if len(files_list) == 0:
+                logger.info("no files or dirs in the dir!")
+            else:
+                files = [x for x in files_list if os.path.isfile(data_dir+x) and x.endswith(".csv")]
+                for file in files:
+                    ### 读取数据
+                    ### 新数据来时，缺省值、异常值判断，新数据数据格式建议为dict或DataFrame，包含字段名
+                    new_data = pd.read_csv(data_dir+file, sep=',', encoding='utf8')
+                    ### 自愈判断处理
+                    data_with_predict = ziyu_process(new_data)
+                    ### 写入文件
+                    data_with_predict.to_csv(path_or_buf=res_dir+file+'.res.csv', sep=',', encoding='gbk')
+                    os.rename(data_dir+file, backup_dir+file)
+                pass
