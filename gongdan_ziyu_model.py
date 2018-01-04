@@ -377,6 +377,7 @@ def ziyu_process(data):
             logger.info('exception_keys')
             logger.info(data_checker.data_exception_keys)
             pass
+        return 1
     else:
         # 数据转换
         testX_prepro = mdl.data_transform(data.iloc[:, :-1])
@@ -433,9 +434,12 @@ if __name__ == "__main__":
                         new_data = pd.read_csv(data_dir+file, sep=',', encoding='utf8')
                         ### 自愈判断处理
                         data_with_predict = ziyu_process(new_data)
-                        ### 写入文件
-                        data_with_predict.to_csv(path_or_buf=res_dir+os.path.splitext(file)[0]+'.res.csv', sep=',', encoding='gbk')
-                        if os.path.exists(backup_dir+file):
-                            os.remove(backup_dir+file)
-                        os.rename(data_dir+file, backup_dir+file)
-                    pass
+                        if data_with_predict == 1:
+                            os.remove(data_dir + file)
+                        else:
+                            ### 写入文件
+                            data_with_predict.to_csv(path_or_buf=res_dir+os.path.splitext(file)[0]+'.res.csv', sep=',', encoding='gbk')
+                            if os.path.exists(backup_dir+file):
+                                os.remove(backup_dir+file)
+                            os.rename(data_dir+file, backup_dir+file)
+                        pass
