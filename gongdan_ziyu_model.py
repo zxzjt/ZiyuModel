@@ -111,17 +111,17 @@ class ZiyuClassifier(object):
         :param X:输入的数据X
         :return:返回归一编码后的数据
         """
-        # 数值字段
-        X_num = X.loc[:, ZiyuClassifier.keys_num]
-        X_num_prepro = ZiyuClassifier.encoder1.transform(X_num)
-        # 名义字段编码
-        X_class = X.loc[:, ZiyuClassifier.keys_class]
         try:
+            # 数值字段
+            X_num = X.loc[:, ZiyuClassifier.keys_num]
+            X_num_prepro = ZiyuClassifier.encoder1.transform(X_num)
+            # 名义字段编码
+            X_class = X.loc[:, ZiyuClassifier.keys_class]
             X_class_en1 = ZiyuClassifier.encoder2.transform(X_class)
             X_class_en2 = ZiyuClassifier.encoder3.transform(X_class_en1)
         except:
             logger = logging.getLogger("ZiyuLogging")
-            logger.exception("标称字段出现新的值，无法编码")
+            logger.exception("data_transform错误")
             return []
         else:
             X_prepro=np.hstack((X_num_prepro, X_class_en2))
@@ -324,8 +324,10 @@ class DataChecker(object):
                         pass
                 # 标称字段是否集合元素
                 for key in ZiyuClassifier.keys_class:
-                    if False in data_ava.loc[:,key].map(lambda x: x in DataChecker.std_data_values[key]).tolist():
+                    is_value_in = data_ava.loc[:, key].map(lambda x: x in DataChecker.std_data_values[key])
+                    if False in is_value_in.tolist():
                         self.data_exception_keys.append(key)
+                        data_ava.loc[np.where(is_value_in == False)[0], key] = nan_fill_data.loc[0, key]
                     else:
                         pass
                 if len(self.data_exception_keys) != 0:
@@ -381,22 +383,29 @@ def ziyu_process(data,file):
     if data_status != 0 and data_status != 3:
         os.remove(data_dir + file)
         missing_info = pd.DataFrame(data=[[data_checker.no_data,data_checker.missing_keys]],columns=['文件是否无数据','缺失字段'])
-        missing_info.to_csv(path_or_buf=res_dir + os.path.splitext(file)[0] + '.res.csv', sep=',',encoding='gbk')
+        missing_info.to_csv(path_or_buf=res_dir + os.path.splitext(file)[0] + '.res.csv', sep=',',encoding='gbk',index=False)
+        return 1
     else:
         # 数据转换
         testX_prepro = mdl.data_transform(data.iloc[:, :-1])
-        # 预测
-        predict_test = mdl.predict(testX_prepro)
-        # mdl.plot_learning_curve(name='RF learning_curve',X=trainX_prepro,y=train_y_prepro,cv=5)
-        # print(mdl.model)
-        # print(metrics.confusion_matrix(ZiyuClassifier.encoder4.transform(data.iloc[:,-1]), predict_test['自愈判断']))
-        # print(metrics.classification_report(ZiyuClassifier.encoder4.transform(data.iloc[:,-1]), predict_test['自愈判断']))
-        predict_test['自愈判断'] = ZiyuClassifier.encoder4.inverse_transform(predict_test['自愈判断'])
-        # 合并数据，添加字段
-        data_with_predict = pd.concat((data, predict_test), axis=1, join='outer')
-        # 写入文件
-        data_with_predict.to_csv(path_or_buf=res_dir + os.path.splitext(file)[0] + '.res.csv', sep=',',encoding='gbk')
-        os.remove(data_dir + file)
+        if testX_prepro==[]:
+            os.remove(data_dir + file)
+            pd.DataFrame(data=[['data_transform错误']], columns=['处理状态']).to_csv(path_or_buf=res_dir + os.path.splitext(file)[0] + '.res.csv', sep=',',encoding='gbk',index=False)
+            return 1
+        else:
+            # 预测
+            predict_test = mdl.predict(testX_prepro)
+            # mdl.plot_learning_curve(name='RF learning_curve',X=trainX_prepro,y=train_y_prepro,cv=5)
+            # print(mdl.model)
+            # print(metrics.confusion_matrix(ZiyuClassifier.encoder4.transform(data.iloc[:,-1]), predict_test['自愈判断']))
+            # print(metrics.classification_report(ZiyuClassifier.encoder4.transform(data.iloc[:,-1]), predict_test['自愈判断']))
+            predict_test['自愈判断'] = ZiyuClassifier.encoder4.inverse_transform(predict_test['自愈判断'])
+            # 合并数据，添加字段
+            data_with_predict = pd.concat((data, predict_test), axis=1, join='outer')
+            # 写入文件
+            data_with_predict.to_csv(path_or_buf=res_dir + os.path.splitext(file)[0] + '.res.csv', sep=',',encoding='gbk',index=False)
+            os.remove(data_dir + file)
+            return 0
 
 if __name__ == "__main__":
     data_all = pd.read_csv('E:/智能运维/工单查询问题/78910月原始问题库数据_不考虑无单_all_utf8.csv', sep=',', encoding='utf8')
@@ -438,5 +447,5 @@ if __name__ == "__main__":
                         ### 新数据来时，缺省值、异常值判断，新数据数据格式建议为dict或DataFrame，包含字段名
                         new_data = pd.read_csv(data_dir+file, sep=',', encoding='gbk')
                         ### 判断处理
-                        ziyu_process(new_data,file)
+                        res_proc = ziyu_process(new_data,file)
 

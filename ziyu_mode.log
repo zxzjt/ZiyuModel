@@ -1,9 +1,0 @@
-2018-01-03 16:19:04,764 INFO gongdan_ziyu_model.py:372 - 测试中文
-2018-01-03 16:19:05,518 INFO gongdan_ziyu_model.py:393 - ['场景要素', '覆盖类型', '问题现象', '地市', '区县', '数据来源', '业务要素']
-2018-01-03 16:40:46,273 INFO gongdan_ziyu_model.py:392 - ['地市', '区县']
-2018-01-03 16:50:19,687 INFO gongdan_ziyu_model.py:392 - ['区县']
-2018-01-04 15:44:41,291 INFO gongdan_ziyu_model.py:418 - can not find csv dir!
-2018-01-04 15:48:46,812 INFO gongdan_ziyu_model.py:377 - exception_keys
-2018-01-04 15:48:46,812 INFO gongdan_ziyu_model.py:378 - ['中心维度']
-2018-01-04 15:50:31,372 INFO gongdan_ziyu_model.py:377 - exception_keys
-2018-01-04 15:50:31,372 INFO gongdan_ziyu_model.py:378 - ['中心维度']
