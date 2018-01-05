@@ -1,0 +1,97 @@
+2018-01-05 16:12:36,657 INFO gongdan_ziyu_model.py:311 - missing_keys
+2018-01-05 16:12:36,657 INFO gongdan_ziyu_model.py:312 - ['中心经度', '中心维度', '问题现象']
+2018-01-05 16:22:51,989 INFO gongdan_ziyu_model.py:334 - exception_keys
+2018-01-05 16:22:51,989 INFO gongdan_ziyu_model.py:335 - ['场景要素', '问题归类(二级)', '区县', '数据来源']
+2018-01-05 16:22:51,989 ERROR gongdan_ziyu_model.py:124 - data_transform错误
+Traceback (most recent call last):
+  File "E:/MyPro/ZiyuModel/gongdan_ziyu_model.py", line 117, in data_transform
+    X_num_prepro = ZiyuClassifier.encoder1.transform(X_num)
+  File "C:\Users\zxzjt\AppData\Local\Programs\Python\Python35\lib\site-packages\sklearn\preprocessing\data.py", line 354, in transform
+    X = check_array(X, copy=self.copy, ensure_2d=False, dtype=FLOAT_DTYPES)
+  File "C:\Users\zxzjt\AppData\Local\Programs\Python\Python35\lib\site-packages\sklearn\utils\validation.py", line 407, in check_array
+    _assert_all_finite(array)
+  File "C:\Users\zxzjt\AppData\Local\Programs\Python\Python35\lib\site-packages\sklearn\utils\validation.py", line 58, in _assert_all_finite
+    " or a value too large for %r." % X.dtype)
+ValueError: Input contains NaN, infinity or a value too large for dtype('float64').
+2018-01-05 16:31:20,580 INFO gongdan_ziyu_model.py:335 - exception_keys
+2018-01-05 16:31:20,580 INFO gongdan_ziyu_model.py:336 - ['场景要素', '问题归类(二级)', '区县', '数据来源']
+2018-01-05 16:31:20,580 ERROR gongdan_ziyu_model.py:124 - data_transform错误
+Traceback (most recent call last):
+  File "E:/MyPro/ZiyuModel/gongdan_ziyu_model.py", line 117, in data_transform
+    X_num_prepro = ZiyuClassifier.encoder1.transform(X_num)
+  File "C:\Users\zxzjt\AppData\Local\Programs\Python\Python35\lib\site-packages\sklearn\preprocessing\data.py", line 354, in transform
+    X = check_array(X, copy=self.copy, ensure_2d=False, dtype=FLOAT_DTYPES)
+  File "C:\Users\zxzjt\AppData\Local\Programs\Python\Python35\lib\site-packages\sklearn\utils\validation.py", line 407, in check_array
+    _assert_all_finite(array)
+  File "C:\Users\zxzjt\AppData\Local\Programs\Python\Python35\lib\site-packages\sklearn\utils\validation.py", line 58, in _assert_all_finite
+    " or a value too large for %r." % X.dtype)
+ValueError: Input contains NaN, infinity or a value too large for dtype('float64').
+2018-01-05 16:47:37,331 INFO gongdan_ziyu_model.py:337 - exception_keys
+2018-01-05 16:47:37,331 INFO gongdan_ziyu_model.py:338 - ['问题归类(二级)', '数据来源']
+2018-01-05 16:47:37,331 ERROR gongdan_ziyu_model.py:125 - data_transform错误
+Traceback (most recent call last):
+  File "E:/MyPro/ZiyuModel/gongdan_ziyu_model.py", line 117, in data_transform
+    X_num_prepro = ZiyuClassifier.encoder1.transform(X_num)
+  File "C:\Users\zxzjt\AppData\Local\Programs\Python\Python35\lib\site-packages\sklearn\preprocessing\data.py", line 354, in transform
+    X = check_array(X, copy=self.copy, ensure_2d=False, dtype=FLOAT_DTYPES)
+  File "C:\Users\zxzjt\AppData\Local\Programs\Python\Python35\lib\site-packages\sklearn\utils\validation.py", line 407, in check_array
+    _assert_all_finite(array)
+  File "C:\Users\zxzjt\AppData\Local\Programs\Python\Python35\lib\site-packages\sklearn\utils\validation.py", line 58, in _assert_all_finite
+    " or a value too large for %r." % X.dtype)
+ValueError: Input contains NaN, infinity or a value too large for dtype('float64').
+2018-01-05 16:49:08,061 INFO gongdan_ziyu_model.py:338 - exception_keys
+2018-01-05 16:49:08,061 INFO gongdan_ziyu_model.py:339 - ['问题归类(二级)', '数据来源']
+2018-01-05 17:24:17,279 INFO gongdan_ziyu_model.py:335 - exception_keys
+2018-01-05 17:24:17,279 INFO gongdan_ziyu_model.py:336 - ['问题归类(二级)', '数据来源']
+2018-01-05 17:25:53,619 INFO gongdan_ziyu_model.py:335 - exception_keys
+2018-01-05 17:25:53,619 INFO gongdan_ziyu_model.py:336 - ['问题归类(二级)', '数据来源']
+2018-01-05 17:25:53,649 ERROR gongdan_ziyu_model.py:124 - data_transform错误
+Traceback (most recent call last):
+  File "E:/MyPro/ZiyuModel/gongdan_ziyu_model.py", line 120, in data_transform
+    X_class_en1 = ZiyuClassifier.encoder2.transform(X_class)
+  File "E:/MyPro/ZiyuModel/gongdan_ziyu_model.py", line 57, in transform
+    en_X.loc[:, self.keys_class[i]] = self.encode_list[i].transform(X.loc[:, self.keys_class[i]])
+  File "C:\Users\zxzjt\AppData\Local\Programs\Python\Python35\lib\site-packages\sklearn\preprocessing\label.py", line 153, in transform
+    raise ValueError("y contains new labels: %s" % str(diff))
+ValueError: y contains new labels: ['CSFB性能质差' '高负荷']
+2018-01-05 17:31:14,530 INFO gongdan_ziyu_model.py:334 - exception_keys
+2018-01-05 17:31:14,530 INFO gongdan_ziyu_model.py:335 - ['问题归类(二级)', '数据来源']
+2018-01-05 17:31:55,160 INFO gongdan_ziyu_model.py:334 - exception_keys
+2018-01-05 17:31:55,170 INFO gongdan_ziyu_model.py:335 - ['问题归类(二级)', '数据来源']
+2018-01-05 17:31:55,180 ERROR gongdan_ziyu_model.py:124 - data_transform错误
+Traceback (most recent call last):
+  File "E:/MyPro/ZiyuModel/gongdan_ziyu_model.py", line 120, in data_transform
+    X_class_en1 = ZiyuClassifier.encoder2.transform(X_class)
+  File "E:/MyPro/ZiyuModel/gongdan_ziyu_model.py", line 57, in transform
+    en_X.loc[:, self.keys_class[i]] = self.encode_list[i].transform(X.loc[:, self.keys_class[i]])
+  File "C:\Users\zxzjt\AppData\Local\Programs\Python\Python35\lib\site-packages\sklearn\preprocessing\label.py", line 151, in transform
+    if len(np.intersect1d(classes, self.classes_)) < len(classes):
+  File "C:\Users\zxzjt\AppData\Local\Programs\Python\Python35\lib\site-packages\numpy\lib\arraysetops.py", line 258, in intersect1d
+    aux.sort()
+TypeError: unorderable types: str() > float()
+2018-01-05 17:37:07,759 INFO gongdan_ziyu_model.py:334 - exception_keys
+2018-01-05 17:37:07,759 INFO gongdan_ziyu_model.py:335 - ['问题归类(二级)', '数据来源']
+2018-01-05 17:37:07,789 ERROR gongdan_ziyu_model.py:124 - data_transform错误
+Traceback (most recent call last):
+  File "E:/MyPro/ZiyuModel/gongdan_ziyu_model.py", line 120, in data_transform
+    X_class_en1 = ZiyuClassifier.encoder2.transform(X_class)
+  File "E:/MyPro/ZiyuModel/gongdan_ziyu_model.py", line 57, in transform
+    en_X.loc[:, self.keys_class[i]] = self.encode_list[i].transform(X.loc[:, self.keys_class[i]])
+  File "C:\Users\zxzjt\AppData\Local\Programs\Python\Python35\lib\site-packages\sklearn\preprocessing\label.py", line 151, in transform
+    if len(np.intersect1d(classes, self.classes_)) < len(classes):
+  File "C:\Users\zxzjt\AppData\Local\Programs\Python\Python35\lib\site-packages\numpy\lib\arraysetops.py", line 258, in intersect1d
+    aux.sort()
+TypeError: unorderable types: str() > float()
+2018-01-05 17:39:46,583 INFO gongdan_ziyu_model.py:334 - exception_keys
+2018-01-05 17:39:46,583 INFO gongdan_ziyu_model.py:335 - ['问题归类(二级)', '数据来源']
+2018-01-05 17:39:46,763 ERROR gongdan_ziyu_model.py:124 - data_transform错误
+Traceback (most recent call last):
+  File "E:/MyPro/ZiyuModel/gongdan_ziyu_model.py", line 120, in data_transform
+    X_class_en1 = ZiyuClassifier.encoder2.transform(X_class)
+  File "E:/MyPro/ZiyuModel/gongdan_ziyu_model.py", line 57, in transform
+    en_X.loc[:, self.keys_class[i]] = self.encode_list[i].transform(X.loc[:, self.keys_class[i]])
+  File "C:\Users\zxzjt\AppData\Local\Programs\Python\Python35\lib\site-packages\sklearn\preprocessing\label.py", line 151, in transform
+    if len(np.intersect1d(classes, self.classes_)) < len(classes):
+  File "C:\Users\zxzjt\AppData\Local\Programs\Python\Python35\lib\site-packages\numpy\lib\arraysetops.py", line 258, in intersect1d
+    aux.sort()
+TypeError: unorderable types: str() > float()

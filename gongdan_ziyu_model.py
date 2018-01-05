@@ -69,8 +69,8 @@ class ZiyuClassifier(object):
     实例变量：model
     """
     # 使用的指标字段
-    keys_class = ['场景要素', '覆盖类型', '问题现象', '地市', '区县', '数据来源', '业务要素']  # '覆盖场景'
-    keys_num = ['告警触发次数', '中心经度', '中心维度', '日均流量(GB)']
+    keys_class = ['场景要素', '覆盖类型', '问题归类(二级)', '地市', '区县', '数据来源', '业务要素']  # '覆盖场景'
+    keys_num = ['告警触发次数', '日均流量(GB)'] # '中心经度', '中心维度'
     # 数值归一化
     encoder1 = MinMaxScaler()
     # 输入标称字段编码成数字
@@ -211,6 +211,7 @@ class DataChecker(object):
     missing_keys缺失关键字段
     data_exception_keys数据异常的字段
     """
+    """新的原始问题库{问题归类(二级),主指标表征值}-->老库{问题现象,表征指标值}"""
     std_data_values = {'问题触发时间':[],
                        '地市':['杭州','宁波','温州','绍兴','嘉兴','湖州','丽水','金华','衢州','台州','舟山'],
                        '区县':['上城','下城','江干','拱墅','西湖','滨江','下沙','萧山','余杭','建德','富阳','临安','桐庐','淳安',
@@ -226,12 +227,10 @@ class DataChecker(object):
                              '定海','普陀','岱山','嵊泗'],
                        '网络类型':['4G','2G'],
                        '网元要素':['基站','路段','小区','栅格'],
-                       '数据来源':['SEQ','北向性能','LTE-MR','实时性能告警'],
+                       '数据来源':['SEQ','北向性能','实时性能告警'],
                        '问题归类(一级)':[],
-                       '问题归类(二级)':[],
-                       '问题现象':['无线切换质差', 'VOLTE接通质差', 'SRVCC切换质差', 'VOLTE丢包质差', 'VOLTE掉话质差',
-                                 '语音质差', '无线接通质差', '实时性能持续质差', 'CSFB回落质差', '无线掉线质差', 'RRC重建比质差',
-                                 'CSFB性能质差','低速率','掉线质差','高负荷','高干扰','零流量'],
+                       '问题归类(二级)':['无线切换质差', 'VOLTE接通质差', 'SRVCC切换质差', 'VOLTE丢包质差', 'VOLTE掉话质差',
+                                 '语音质差', '无线接通质差', '实时性能持续质差', 'CSFB回落质差', '无线掉线质差', 'RRC重建比质差'],
                        '问题类型':[],
                        '类别要素':['互操作','感知','质量','负荷','结构'],
                        '是否追加':['是','否'],
@@ -296,7 +295,7 @@ class DataChecker(object):
             # print("The file has no data!")
             logger.info("The file has no data!")
             self.no_data = '是'
-            return 1
+            return (1,pd.DataFrame())
         else:
             self.no_data = '否'
             for key in ZiyuClassifier.keys_num + ZiyuClassifier.keys_class:
@@ -310,7 +309,7 @@ class DataChecker(object):
                 # print(self.missing_keys)
                 logger.info('missing_keys')
                 logger.info(self.missing_keys)
-                return 2
+                return (2,pd.DataFrame())
             else:
                 self.missing_keys = ['无']
                 data_ava = data.loc[:,ZiyuClassifier.keys_num + ZiyuClassifier.keys_class]
@@ -334,9 +333,9 @@ class DataChecker(object):
                     # print(self.data_exception_keys)
                     logger.info('exception_keys')
                     logger.info(self.data_exception_keys)
-                    return 3
+                    return (3,data_ava)
                 else:
-                    return 0
+                    return (0,data_ava)
 
 class ZiyuLogging(object):
     """日志记录
@@ -380,14 +379,15 @@ def ziyu_process(data,file):
     nan_fill_data = mdl.mean_mode
     data_checker = DataChecker()
     data_status = data_checker.data_check(data, nan_fill_data)
-    if data_status != 0 and data_status != 3:
+    if data_status[0] != 0 and data_status[0] != 3:
         os.remove(data_dir + file)
         missing_info = pd.DataFrame(data=[[data_checker.no_data,data_checker.missing_keys]],columns=['文件是否无数据','缺失字段'])
         missing_info.to_csv(path_or_buf=res_dir + os.path.splitext(file)[0] + '.res.csv', sep=',',encoding='gbk',index=False)
         return 1
     else:
         # 数据转换
-        testX_prepro = mdl.data_transform(data.iloc[:, :-1])
+        print(data_status[1])
+        testX_prepro = mdl.data_transform(data_status[1].iloc[:, :-1])
         if testX_prepro==[]:
             os.remove(data_dir + file)
             pd.DataFrame(data=[['data_transform错误']], columns=['处理状态']).to_csv(path_or_buf=res_dir + os.path.splitext(file)[0] + '.res.csv', sep=',',encoding='gbk',index=False)
@@ -408,7 +408,7 @@ def ziyu_process(data,file):
             return 0
 
 if __name__ == "__main__":
-    data_all = pd.read_csv('E:/智能运维/工单查询问题/78910月原始问题库数据_不考虑无单_all_utf8.csv', sep=',', encoding='utf8')
+    data_all = pd.read_csv('E:/智能运维/工单查询问题/78910月原始问题库数据_不考虑无单_all.csv', sep=',', encoding='gbk')
     test = data_all[data_all['问题触发时间'] == '9月'].reset_index(drop=True)
     # 抽样
     train_all = data_all[data_all['问题触发时间'] != '9月'].reset_index(drop=True)
