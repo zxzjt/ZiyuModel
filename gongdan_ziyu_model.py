@@ -70,7 +70,7 @@ class ZiyuClassifier(object):
     """
     # 使用的指标字段
     keys_class = ['场景要素', '覆盖类型', '问题现象', '地市', '区县', '数据来源', '业务要素']  # '覆盖场景'
-    keys_num = ['劣化次数', '告警触发次数', '中心经度', '中心维度', '日均流量(GB)']
+    keys_num = ['告警触发次数', '中心经度', '中心维度', '日均流量(GB)']
     # 数值归一化
     encoder1 = MinMaxScaler()
     # 输入标称字段编码成数字
@@ -116,10 +116,16 @@ class ZiyuClassifier(object):
         X_num_prepro = ZiyuClassifier.encoder1.transform(X_num)
         # 名义字段编码
         X_class = X.loc[:, ZiyuClassifier.keys_class]
-        X_class_en1 = ZiyuClassifier.encoder2.transform(X_class)
-        X_class_en2 = ZiyuClassifier.encoder3.transform(X_class_en1)
-        X_prepro=np.hstack((X_num_prepro, X_class_en2))
-        return X_prepro
+        try:
+            X_class_en1 = ZiyuClassifier.encoder2.transform(X_class)
+            X_class_en2 = ZiyuClassifier.encoder3.transform(X_class_en1)
+        except:
+            logger = logging.getLogger("ZiyuLogging")
+            logger.exception("标称字段出现新的值，无法编码")
+            return []
+        else:
+            X_prepro=np.hstack((X_num_prepro, X_class_en2))
+            return X_prepro
 
     def fit(self,X,y):
         """模型拟合
@@ -230,7 +236,7 @@ class DataChecker(object):
                        '类别要素':['互操作','感知','质量','负荷','结构'],
                        '是否追加':['是','否'],
                        '主指标(事件)':[],
-                       '主指标表征值':[-110,700],
+                       '主指标表征值':[-200,900],
                        '处理优先级':['中','高'],
                        '目前状态':['待接入','归档','人工关闭','已接入'],
                        '是否为FDD站点':['是','否'],
@@ -240,9 +246,9 @@ class DataChecker(object):
                        '是否为性能交维站点':['是','否'],
                        '是否质检通过':['是','否','未质检'],
                        '资管生命周期状态':['工程','现网','维护','设计','在网'],
-                       '劣化次数':[1,31],
-                       '告警触发次数':[1,300],
-                       '日均流量(GB)':[0.0,0.27],
+                       #'劣化次数':[1,31],
+                       '告警触发次数':[1,500],
+                       '日均流量(GB)':[0.0,1000],
                        '业务要素':['数据','语音'],
                        '触发要素':['劣于门限','异常事件','人工创造'],
                        '场景要素':['高速', '海域', '室外', '普铁', '室分', '地铁', '山区', '小微站', '高校', '高铁', '全网'],
@@ -256,7 +262,6 @@ class DataChecker(object):
                        '时间维度':['天'],
                        '中心经度':[118.037,123.143],
                        '中心维度':[27.22,31.18],
-                       '工单类型':['集中质量分析工单'],
                        'TAC(LAC)':[22148,26840]}
 
     def __init__(self):
@@ -289,8 +294,11 @@ class DataChecker(object):
         self.item_num,self.feature_num = data.shape
         if self.item_num == 0 or self.feature_num == 0:
             # print("The file has no data!")
+            logger.info("The file has no data!")
+            self.no_data = '是'
             return 1
         else:
+            self.no_data = '否'
             for key in ZiyuClassifier.keys_num + ZiyuClassifier.keys_class:
                 try:
                     data.loc[:,key]
@@ -300,8 +308,11 @@ class DataChecker(object):
                     pass
             if len(self.missing_keys) != 0:
                 # print(self.missing_keys)
+                logger.info('missing_keys')
+                logger.info(self.missing_keys)
                 return 2
             else:
+                self.missing_keys = ['无']
                 data_ava = data.loc[:,ZiyuClassifier.keys_num + ZiyuClassifier.keys_class]
                 self.__null_process(data_ava, nan_fill_data)
                 # 数值是否在合理范围
@@ -319,6 +330,8 @@ class DataChecker(object):
                         pass
                 if len(self.data_exception_keys) != 0:
                     # print(self.data_exception_keys)
+                    logger.info('exception_keys')
+                    logger.info(self.data_exception_keys)
                     return 3
                 else:
                     return 0
@@ -358,26 +371,17 @@ class ZiyuLogging(object):
         logger = logging.getLogger("OtherLogging")
         logger.error("Test OtherLogging")
 
-def ziyu_process(data):
+def ziyu_process(data,file):
     # 加载模型，预处理，预测
     mdl = joblib.load('./gongdan_ziyu.model')
     # 添加简单校验规则
     nan_fill_data = mdl.mean_mode
     data_checker = DataChecker()
     data_status = data_checker.data_check(data, nan_fill_data)
-    if data_status != 0:
-        if data_status == 1:
-            logger.info("The file has no data!")
-            pass
-        elif data_status == 2:
-            logger.info('missing_keys')
-            logger.info(data_checker.missing_keys)
-            pass
-        else:
-            logger.info('exception_keys')
-            logger.info(data_checker.data_exception_keys)
-            pass
-        return 1
+    if data_status != 0 and data_status != 3:
+        os.remove(data_dir + file)
+        missing_info = pd.DataFrame(data=[[data_checker.no_data,data_checker.missing_keys]],columns=['文件是否无数据','缺失字段'])
+        missing_info.to_csv(path_or_buf=res_dir + os.path.splitext(file)[0] + '.res.csv', sep=',',encoding='gbk')
     else:
         # 数据转换
         testX_prepro = mdl.data_transform(data.iloc[:, :-1])
@@ -390,7 +394,9 @@ def ziyu_process(data):
         predict_test['自愈判断'] = ZiyuClassifier.encoder4.inverse_transform(predict_test['自愈判断'])
         # 合并数据，添加字段
         data_with_predict = pd.concat((data, predict_test), axis=1, join='outer')
-        return data_with_predict
+        # 写入文件
+        data_with_predict.to_csv(path_or_buf=res_dir + os.path.splitext(file)[0] + '.res.csv', sep=',',encoding='gbk')
+        os.remove(data_dir + file)
 
 if __name__ == "__main__":
     data_all = pd.read_csv('E:/智能运维/工单查询问题/78910月原始问题库数据_不考虑无单_all_utf8.csv', sep=',', encoding='utf8')
@@ -398,8 +404,8 @@ if __name__ == "__main__":
     # 抽样
     train_all = data_all[data_all['问题触发时间'] != '9月'].reset_index(drop=True)
     train = train_all  # pd.concat([train_all[train_all.自愈状态=='派单'].sample(frac=0.5,axis=0,random_state=0),train_all[train_all.自愈状态=='自愈']],axis=0,join='outer')
-    print("训练样本比例为%f" % (train[train['自愈状态'] == '派单'].shape[0] / train[train['自愈状态'] == '自愈'].shape[0]))
-    print("测试样本比例为%f" % (test[test['自愈状态'] == '派单'].shape[0] / test[test['自愈状态'] == '自愈'].shape[0]))
+    # print("训练样本比例为%f" % (train[train['自愈状态'] == '派单'].shape[0] / train[train['自愈状态'] == '自愈'].shape[0]))
+    # print("测试样本比例为%f" % (test[test['自愈状态'] == '派单'].shape[0] / test[test['自愈状态'] == '自愈'].shape[0]))
     # 创建模型
     model=ZiyuClassifier(RandomForestClassifier(n_estimators=120,min_samples_leaf=1,max_depth=12,max_features=0.4,random_state=0))
     trainX_prepro,train_y_prepro=model.data_fit_transform(train.iloc[:,:-1],train.loc[:,'自愈状态'])
@@ -413,7 +419,6 @@ if __name__ == "__main__":
     logger = logging.getLogger("ZiyuLogging")
     ### 目录轮询，查找处理文件
     data_dir = 'E:/智能运维/工单查询问题/test_dir/'
-    backup_dir = data_dir + 'backup/'
     res_dir = data_dir + 'res/'
     if not os.path.isdir(data_dir):
         logger.info("can not find csv dir!")
@@ -431,15 +436,7 @@ if __name__ == "__main__":
                     for file in files:
                         ### 读取数据
                         ### 新数据来时，缺省值、异常值判断，新数据数据格式建议为dict或DataFrame，包含字段名
-                        new_data = pd.read_csv(data_dir+file, sep=',', encoding='utf8')
-                        ### 自愈判断处理
-                        data_with_predict = ziyu_process(new_data)
-                        if data_with_predict == 1:
-                            os.remove(data_dir + file)
-                        else:
-                            ### 写入文件
-                            data_with_predict.to_csv(path_or_buf=res_dir+os.path.splitext(file)[0]+'.res.csv', sep=',', encoding='gbk')
-                            if os.path.exists(backup_dir+file):
-                                os.remove(backup_dir+file)
-                            os.rename(data_dir+file, backup_dir+file)
-                        pass
+                        new_data = pd.read_csv(data_dir+file, sep=',', encoding='gbk')
+                        ### 判断处理
+                        ziyu_process(new_data,file)
+
