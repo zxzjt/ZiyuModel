@@ -95,3 +95,16 @@ Traceback (most recent call last):
   File "C:\Users\zxzjt\AppData\Local\Programs\Python\Python35\lib\site-packages\numpy\lib\arraysetops.py", line 258, in intersect1d
     aux.sort()
 TypeError: unorderable types: str() > float()
+2018-01-08 08:48:52,988 ERROR gongdan_ziyu_model.py:124 - data_transform错误
+Traceback (most recent call last):
+  File "E:/MyPro/ZiyuModel/gongdan_ziyu_model.py", line 120, in data_transform
+    X_class_en1 = ZiyuClassifier.encoder2.transform(X_class)
+  File "E:/MyPro/ZiyuModel/gongdan_ziyu_model.py", line 57, in transform
+    en_X.loc[:, self.keys_class[i]] = self.encode_list[i].transform(X.loc[:, self.keys_class[i]])
+  File "C:\Users\zxzjt\AppData\Local\Programs\Python\Python35\lib\site-packages\sklearn\preprocessing\label.py", line 151, in transform
+    if len(np.intersect1d(classes, self.classes_)) < len(classes):
+  File "C:\Users\zxzjt\AppData\Local\Programs\Python\Python35\lib\site-packages\numpy\lib\arraysetops.py", line 258, in intersect1d
+    aux.sort()
+TypeError: unorderable types: str() > float()
+2018-01-08 08:54:08,176 INFO gongdan_ziyu_model.py:334 - exception_keys
+2018-01-08 08:54:08,176 INFO gongdan_ziyu_model.py:335 - ['问题归类(二级)', '数据来源']

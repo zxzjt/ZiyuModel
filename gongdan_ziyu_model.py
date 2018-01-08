@@ -386,8 +386,7 @@ def ziyu_process(data,file):
         return 1
     else:
         # 数据转换
-        print(data_status[1])
-        testX_prepro = mdl.data_transform(data_status[1].iloc[:, :-1])
+        testX_prepro = mdl.data_transform(data_status[1])
         if testX_prepro==[]:
             os.remove(data_dir + file)
             pd.DataFrame(data=[['data_transform错误']], columns=['处理状态']).to_csv(path_or_buf=res_dir + os.path.splitext(file)[0] + '.res.csv', sep=',',encoding='gbk',index=False)
