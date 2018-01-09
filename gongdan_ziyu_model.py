@@ -1,4 +1,4 @@
-#! /use/bin/python
+#! /use/bin/python3
 # coding: utf8
 import sys
 import os
@@ -7,15 +7,15 @@ import logging
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import GridSearchCV,train_test_split
-from sklearn.decomposition import PCA,KernelPCA
-from sklearn.manifold import MDS,Isomap,LocallyLinearEmbedding
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.svm import SVC,LinearSVC
+# from sklearn.decomposition import PCA,KernelPCA
+# from sklearn.manifold import MDS,Isomap,LocallyLinearEmbedding
+# from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+# from sklearn.tree import DecisionTreeClassifier
+# from sklearn.svm import SVC,LinearSVC
 from sklearn.ensemble import RandomForestClassifier,GradientBoostingClassifier
 from sklearn.preprocessing import MinMaxScaler,StandardScaler,OneHotEncoder,LabelEncoder
 from sklearn import metrics
-from plot_learning_curve import plot_learning_curve
+# from plot_learning_curve import plot_learning_curve
 from sklearn.externals import joblib
 
 class MultiLabelEncoder(object):
@@ -65,23 +65,18 @@ class ZiyuClassifier(object):
     model：输入可用的分类器模型
 
     属性
-    类变量：keys_class，keys_num，encoder1，encoder2，encoder3，encoder4
-    实例变量：model
+    实例变量：model,keys_class，keys_num，encoder1，encoder2，encoder3，encoder4
     """
-    # 使用的指标字段
-    keys_class = ['场景要素', '覆盖类型', '问题归类(二级)', '地市', '区县', '数据来源', '业务要素']  # '覆盖场景'
-    keys_num = ['告警触发次数', '日均流量(GB)'] # '中心经度', '中心维度'
-    # 数值归一化
-    encoder1 = MinMaxScaler()
-    # 输入标称字段编码成数字
-    encoder2 = MultiLabelEncoder(keys_class)
-    # 数字编码成one-hot
-    encoder3 = OneHotEncoder(sparse=False)
-    # 输出标签编码成数字
-    encoder4 = LabelEncoder()
-
     def __init__(self,model):
-        self.model=model
+        # 数值归一化
+        self.encoder1 = MinMaxScaler()
+        # 输入标称字段编码成数字
+        self.encoder2 = MultiLabelEncoder(DataChecker.keys_class)
+        # 数字编码成one-hot
+        self.encoder3 = OneHotEncoder(sparse=False)
+        # 输出标签编码成数字
+        self.encoder4 = LabelEncoder()
+        self.model = model
         pass
 
     def data_fit_transform(self,X,y):
@@ -94,15 +89,15 @@ class ZiyuClassifier(object):
         # 统计均值和众数
         self.mean_mode = self.__get_means_mode(X)
         # 数值字段
-        X_num = X.loc[:, ZiyuClassifier.keys_num]
-        X_num_prepro = ZiyuClassifier.encoder1.fit_transform(X_num)
+        X_num = X.loc[:, DataChecker.keys_num]
+        X_num_prepro = self.encoder1.fit_transform(X_num)
         # 名义字段编码
-        X_class = X.loc[:, ZiyuClassifier.keys_class]
-        X_class_en1 = ZiyuClassifier.encoder2.fit_transform(X_class)
-        X_class_en2 = ZiyuClassifier.encoder3.fit_transform(X_class_en1)
+        X_class = X.loc[:, DataChecker.keys_class]
+        X_class_en1 = self.encoder2.fit_transform(X_class)
+        X_class_en2 = self.encoder3.fit_transform(X_class_en1)
         X_prepro = np.hstack((X_num_prepro, X_class_en2))
         # 标签编码
-        y_en = ZiyuClassifier.encoder4.fit_transform(y)
+        y_en = self.encoder4.fit_transform(y)
         return X_prepro,y_en
 
     def data_transform(self,X):
@@ -113,12 +108,12 @@ class ZiyuClassifier(object):
         """
         try:
             # 数值字段
-            X_num = X.loc[:, ZiyuClassifier.keys_num]
-            X_num_prepro = ZiyuClassifier.encoder1.transform(X_num)
+            X_num = X.loc[:, DataChecker.keys_num]
+            X_num_prepro = self.encoder1.transform(X_num)
             # 名义字段编码
-            X_class = X.loc[:, ZiyuClassifier.keys_class]
-            X_class_en1 = ZiyuClassifier.encoder2.transform(X_class)
-            X_class_en2 = ZiyuClassifier.encoder3.transform(X_class_en1)
+            X_class = X.loc[:, DataChecker.keys_class]
+            X_class_en1 = self.encoder2.transform(X_class)
+            X_class_en2 = self.encoder3.transform(X_class_en1)
         except:
             logger = logging.getLogger("ZiyuLogging")
             logger.exception("data_transform错误")
@@ -175,8 +170,8 @@ class ZiyuClassifier(object):
         :param cv:cv
         :return:plt
         """
-        plt=plot_learning_curve(self.model, name, X, y, ylim=None,cv=cv)
-        return plt
+        # plt=plot_learning_curve(self.model, name, X, y, ylim=None,cv=cv)
+        # return plt
 
     def __get_means_mode(self, X):
         """统计均值和众数
@@ -184,8 +179,8 @@ class ZiyuClassifier(object):
         :param X: 输入X
         :return: DataFrame,各字段均值或众数
         """
-        mode_X = X.loc[:, ZiyuClassifier.keys_class].mode(axis=0)
-        mean_X = X.loc[:, ZiyuClassifier.keys_num].mean().to_frame().transpose()
+        mode_X = X.loc[:, DataChecker.keys_class].mode(axis=0)
+        mean_X = X.loc[:, DataChecker.keys_num].mean().to_frame().transpose()
         return pd.concat([mean_X, mode_X], axis=1, join='outer')
 
     def set_mean_mode(self, value):
@@ -205,12 +200,16 @@ class DataChecker(object):
     属性
     类变量：
     std_data_values指标取值范围，或枚举
+    keys_class,keys_num
     实例变量：
     item_num数据记录数
     feature_num数据字段数
     missing_keys缺失关键字段
     data_exception_keys数据异常的字段
     """
+    # 使用的指标字段
+    keys_class = ['场景要素', '覆盖类型', '问题归类(二级)', '地市', '区县', '数据来源', '业务要素']  # '覆盖场景'
+    keys_num = ['告警触发次数', '日均流量(GB)']  # '中心经度', '中心维度'
     """新的原始问题库{问题归类(二级),主指标表征值}-->老库{问题现象,表征指标值}"""
     std_data_values = {'问题触发时间':[],
                        '地市':['杭州','宁波','温州','绍兴','嘉兴','湖州','丽水','金华','衢州','台州','舟山'],
@@ -298,7 +297,7 @@ class DataChecker(object):
             return (1,pd.DataFrame())
         else:
             self.no_data = '否'
-            for key in ZiyuClassifier.keys_num + ZiyuClassifier.keys_class:
+            for key in DataChecker.keys_num + DataChecker.keys_class:
                 try:
                     data.loc[:,key]
                 except:
@@ -312,17 +311,17 @@ class DataChecker(object):
                 return (2,pd.DataFrame())
             else:
                 self.missing_keys = ['无']
-                data_ava = data.loc[:,ZiyuClassifier.keys_num + ZiyuClassifier.keys_class]
+                data_ava = data.loc[:,DataChecker.keys_num + DataChecker.keys_class]
                 self.__null_process(data_ava, nan_fill_data)
                 # 数值是否在合理范围
-                for key in ZiyuClassifier.keys_num:
+                for key in DataChecker.keys_num:
                     if True in list(data_ava.loc[:,key] < DataChecker.std_data_values[key][0])\
                             or True in list(data_ava.loc[:,key] > DataChecker.std_data_values[key][1]):
                         self.data_exception_keys.append(key)
                     else:
                         pass
                 # 标称字段是否集合元素
-                for key in ZiyuClassifier.keys_class:
+                for key in DataChecker.keys_class:
                     is_value_in = data_ava.loc[:, key].map(lambda x: x in DataChecker.std_data_values[key])
                     if False in is_value_in.tolist():
                         self.data_exception_keys.append(key)
@@ -373,8 +372,6 @@ class ZiyuLogging(object):
         logger.error("Test OtherLogging")
 
 def ziyu_process(data,file):
-    # 加载模型，预处理，预测
-    mdl = joblib.load('./gongdan_ziyu.model')
     # 添加简单校验规则
     nan_fill_data = mdl.mean_mode
     data_checker = DataChecker()
@@ -398,7 +395,7 @@ def ziyu_process(data,file):
             # print(mdl.model)
             # print(metrics.confusion_matrix(ZiyuClassifier.encoder4.transform(data.iloc[:,-1]), predict_test['自愈判断']))
             # print(metrics.classification_report(ZiyuClassifier.encoder4.transform(data.iloc[:,-1]), predict_test['自愈判断']))
-            predict_test['自愈判断'] = ZiyuClassifier.encoder4.inverse_transform(predict_test['自愈判断'])
+            predict_test['自愈判断'] = mdl.encoder4.inverse_transform(predict_test['自愈判断'])
             # 合并数据，添加字段
             data_with_predict = pd.concat((data, predict_test), axis=1, join='outer')
             # 写入文件
@@ -407,7 +404,8 @@ def ziyu_process(data,file):
             return 0
 
 if __name__ == "__main__":
-    data_all = pd.read_csv('E:/智能运维/工单查询问题/78910月原始问题库数据_不考虑无单_all.csv', sep=',', encoding='gbk')
+
+    data_all = pd.read_csv('./78910_all.csv', sep=',', encoding='gbk')
     test = data_all[data_all['问题触发时间'] == '9月'].reset_index(drop=True)
     # 抽样
     train_all = data_all[data_all['问题触发时间'] != '9月'].reset_index(drop=True)
@@ -426,11 +424,13 @@ if __name__ == "__main__":
     ZiyuLogging.config(logger=logging.getLogger("ZiyuLogging"))
     logger = logging.getLogger("ZiyuLogging")
     ### 目录轮询，查找处理文件
-    data_dir = 'E:/智能运维/工单查询问题/test_dir/'
+    data_dir = './test_dir/'
     res_dir = data_dir + 'res/'
     if not os.path.isdir(data_dir):
         logger.info("can not find csv dir!")
     else:
+        # 加载模型，预处理，预测
+        mdl = joblib.load('./gongdan_ziyu.model')
         while True:
             files_list = os.listdir(data_dir)
             if len(files_list) == 0:
