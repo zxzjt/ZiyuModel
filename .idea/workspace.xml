@@ -1,13 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="be1c234a-6535-49f2-9665-016969104bc6" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gongdan_ziyu.model" afterPath="$PROJECT_DIR$/gongdan_ziyu.model" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test_dir/res/test.res.csv" afterPath="$PROJECT_DIR$/test_dir/res/test.res.csv" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gongdan_ziyu_model.py" afterPath="$PROJECT_DIR$/gongdan_ziyu_model.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ziyu_mode.log" afterPath="$PROJECT_DIR$/ziyu_mode.log" />
-    </list>
+    <list default="true" id="be1c234a-6535-49f2-9665-016969104bc6" name="Default" comment="" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
