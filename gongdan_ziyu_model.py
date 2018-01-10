@@ -405,11 +405,11 @@ def ziyu_process(data,file):
 
 if __name__ == "__main__":
 
-    data_all = pd.read_csv('./78910_all.csv', sep=',', encoding='gbk')
+    data_all = pd.read_csv('./78910_all.csv', sep=',', encoding='gbk').reset_index(drop=True)
     test = data_all[data_all['问题触发时间'] == '9月'].reset_index(drop=True)
     # 抽样
     train_all = data_all[data_all['问题触发时间'] != '9月'].reset_index(drop=True)
-    train = train_all  # pd.concat([train_all[train_all.自愈状态=='派单'].sample(frac=0.5,axis=0,random_state=0),train_all[train_all.自愈状态=='自愈']],axis=0,join='outer')
+    train = data_all  # pd.concat([train_all[train_all.自愈状态=='派单'].sample(frac=0.5,axis=0,random_state=0),train_all[train_all.自愈状态=='自愈']],axis=0,join='outer')
     # print("训练样本比例为%f" % (train[train['自愈状态'] == '派单'].shape[0] / train[train['自愈状态'] == '自愈'].shape[0]))
     # print("测试样本比例为%f" % (test[test['自愈状态'] == '派单'].shape[0] / test[test['自愈状态'] == '自愈'].shape[0]))
     # 创建模型
